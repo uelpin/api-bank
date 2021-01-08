@@ -8,5 +8,6 @@ const { response } = require('express')
 router.post('/deposito', BankController.deposito)
 router.post('/saque', BankController.saque)
 router.post('/pagamento', BankController.pagamento)
+router.post('/transferencia', BankController.transferencia)
 
 module.exports = router

@@ -183,6 +183,48 @@ class BankController {
         )
     }
 
+    async transferencia(request, response) {
+        var { usuario, conta_credito, valor } = request.body
+
+        if (valor == undefined) {
+            response.json({ "Message": "Valor não definido" })
+            return
+        }
+        if (usuario && conta_credito == undefined) {
+            response.json({ "Message": "Usuario não definido" })
+            return
+        }
+
+        var movimentacao, numeroConta
+        if (usuario != undefined) {
+            movimentacao = 'Transferencia - Saida'
+            numeroConta = await getUsuario(usuario)
+        }
+        else {
+            movimentacao = 'Transferencia - Entrada'
+            numeroConta = await getUsuario(conta_credito)
+        }
+
+        var saldo = await getSaldo(numeroConta)
+        if (movimentacao == 'Transferencia - Saida' && saldo < valor) {
+            response.json({ "Message": "Saldo insuficiente" })
+            return
+        }
+
+        var saldoAtualizado = parseFloat(saldo) + parseFloat(valor)
+        if (movimentacao == 'Transferencia - Saida') {
+            saldoAtualizado = parseFloat(saldo) - parseFloat(valor)
+        }
+
+        await updateSaldo(numeroConta, saldoAtualizado).then(
+            result =>
+                setMovimentacao(numeroConta, movimentacao, valor).then(
+                    result2 =>
+                        response.json({ "Message": "Transferência realizada com sucesso!" })
+                )
+        )
+
+    }
 }
 
 module.exports = new BankController()
