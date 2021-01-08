@@ -153,6 +153,36 @@ class BankController {
                         response.json({ "Message": "Saque realizado com sucesso!" })))
     }
 
+    async pagamento(request, response) {
+        var { valor, usuario } = request.body
+
+        if (valor == undefined || usuario == undefined) {
+            response.json({ "Message": "Falta de dados" })
+        }
+
+        var numeroConta = await getUsuario(usuario)
+        if (numeroConta == undefined) {
+            response.json({ "Message": "Usuario não encontrado" })
+            return
+        }
+
+        var saldo = await getSaldo(numeroConta)
+        if (saldo < valor) {
+            response.json({ "Message": "Saldo insuficiente" })
+            return
+        }
+
+        var saldoAtualizado = parseFloat(saldo) - parseFloat(valor)
+
+        await updateSaldo(numeroConta, saldoAtualizado).then(
+            result =>
+                setMovimentacao(numeroConta, 'Pagamento', valor).then(
+                    result2 =>
+                        response.json({ "Message": "Pagamento realizado com sucesso!" })
+                )
+        )
+    }
+
 }
 
 module.exports = new BankController()
