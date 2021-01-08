@@ -226,6 +226,27 @@ class BankController {
         )
 
     }
+
+    async getInfo(request, response) {
+        const { usuario } = request.body
+
+        var sql = `SELECT * FROM cliente`
+
+        if (usuario != undefined) {
+            sql = sql + ` WHERE nome = "${usuario}"`
+        }
+
+        var result = new Promise((resolve, reject) => {
+            database.query(sql, (e, data) => {
+                if (e) {
+                    reject(e)
+                    return
+                }
+                result = data
+                resolve(result)
+            })
+        }).then(result => response.json(result))
+    }
 }
 
 module.exports = new BankController()
