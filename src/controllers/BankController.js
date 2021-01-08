@@ -190,7 +190,8 @@ class BankController {
             response.json({ "Message": "Valor não definido" })
             return
         }
-        if (usuario && conta_credito == undefined) {
+
+        if (usuario == undefined && conta_credito == undefined) {
             response.json({ "Message": "Usuario não definido" })
             return
         }
