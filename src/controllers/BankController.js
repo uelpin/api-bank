@@ -1,3 +1,4 @@
+const { promise } = require('../database/connection')
 const database = require('../database/connection')
 
 async function getUsuario(usuario) {
@@ -12,10 +13,79 @@ async function getUsuario(usuario) {
     return new Promise((resolve, reject) => {
         database.query(sql, (e, data) => {
             if (e) {
-                reject(e)
+                reject('Error')
             }
             else {
                 resolve(data[0]['numero_conta'])
+            }
+        })
+    })
+}
+
+async function getSaldo(numeroConta) {
+    const sql =
+        `SELECT                              ` +
+        `   saldo                            ` +
+        `FROM                                ` +
+        `   cliente                          ` +
+        `WHERE                               ` +
+        `   numero_conta = "${numeroConta}"; `
+
+    return new Promise((resolve, reject) => {
+        database.query(sql, (e, data) => {
+            if (e) {
+                reject('Error')
+            }
+            else {
+                resolve(data[0]["saldo"])
+            }
+        })
+    })
+}
+
+async function updateSaldo(numeroConta, valorAtualizado) {
+    const sql =
+        `UPDATE                              ` +
+        `   cliente                          ` +
+        `SET                                 ` +
+        `    saldo = ${valorAtualizado}      ` +
+        `WHERE                               ` +
+        `    numero_conta = "${numeroConta}";`
+
+    return new Promise((resolve, reject) => {
+        database.query(sql, (e, data) => {
+            if (e) {
+                reject('Error')
+            }
+            else {
+                resolve(data)
+            }
+        })
+    })
+}
+
+async function setMovimentacao(numeroConta, descricao, valor) {
+    const sql =
+        `INSERT INTO movimentacao  ` +
+        `(                         ` +
+        `   numero_conta,          ` +
+        `   descricao,             ` +
+        `   valor                  ` +
+        `)                         ` +
+        `VALUES                    ` +
+        `(                         ` +
+        `   "${numeroConta}",      ` +
+        `   "${descricao}",        ` +
+        `    ${valor}              ` +
+        `);                        `
+
+    return new Promise((resolve, reject) => {
+        database.query(sql, (e, data) => {
+            if (e) {
+                reject('Error')
+            }
+            else {
+                resolve(data)
             }
         })
     })
@@ -25,88 +95,33 @@ async function getUsuario(usuario) {
 class BankController {
 
     async deposito(request, response) {
-        var sql, valorDeposito
-        var { usuario, valor } = request.body
+        var valorDeposito, { usuario, valor } = request.body
 
         if (usuario == undefined || valor == undefined) {
             response.json({ "Message": "Falta de dados" })
             return
         }
-        valorDeposito = valor
+        valorDeposito = parseFloat(valor)
 
         var numeroConta = await getUsuario(usuario)
-
         if (numeroConta == undefined) {
             response.json({ "Message": "Conta não encontrada" })
             return
         }
 
-        sql =
-            `SELECT                              ` +
-            `   saldo                            ` +
-            `FROM                                ` +
-            `   cliente                          ` +
-            `WHERE                               ` +
-            `   numero_conta = "${numeroConta}"; `
-
-        var saldoConta = await new Promise((resolve, reject) => {
-            database.query(sql, (e, data) => {
-                if (e) {
-                    console.log('erroSQL', e)
-                    reject()
-                }
-
-                console.log('saldo ' + data)
-
-                saldoConta = data[0]['saldo']
-                resolve(saldoConta)
-            })
-        })
+        var saldoConta = await getSaldo(numeroConta)
+        if (saldoConta == 'Error') {
+            response.json({ "Message": "Não foi possivel verificar o saldo!" })
+            return
+        }
 
         valorDeposito = parseFloat(valorDeposito) + parseFloat(saldoConta)
 
-        sql =
-            `UPDATE                              ` +
-            `   cliente                          ` +
-            `SET                                 ` +
-            `    saldo = ${valorDeposito}        ` +
-            `WHERE                               ` +
-            `    numero_conta = "${numeroConta}";`
-
-        await new Promise((resolve, reject) => {
-            database.query(sql, (e, data) => {
-                if (e) {
-                    reject(new Error, e)
-                }
-                resolve(data)
-            })
-        })
-
-        sql =
-            `INSERT INTO movimentacao  ` +
-            `(                         ` +
-            `   numero_conta,          ` +
-            `   descricao,             ` +
-            `   valor                  ` +
-            `)                         ` +
-            `VALUES                    ` +
-            `(                         ` +
-            `   "${numeroConta}",      ` +
-            `   "Depósito",            ` +
-            `   ${valorDeposito}       ` +
-            `);                        `
-
-        await new Promise((resolve, reject) => {
-            database.query(sql, (e, data) => {
-                if (e) {
-                    reject(e)
-                    return
-                }
-                resolve(data)
-            })
-        })
-
-        response.json({ "Message": "Depósito realizado com sucesso!" })
+        await updateSaldo(numeroConta, valorDeposito).then(
+            result =>
+                setMovimentacao(numeroConta, 'Depósito', valor).then(
+                    result2 =>
+                        response.json({ "Message": "Depósito realizado com sucesso!" })))
     }
 
     async saque(request, response) {
