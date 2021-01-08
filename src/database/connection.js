@@ -1,10 +1,10 @@
 const mysql = require('mysql2')
 
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'acessog10',
-    database: 'uelbanco'
+    host: 'sql10.freemysqlhosting.net',
+    user: 'sql10385852',
+    password: 'C84tNBCaIq',
+    database: 'sql10385852'
 })
 
 connection.connect((e) => {
