@@ -10,16 +10,13 @@ async function getUsuario(usuario) {
         `WHERE                   ` +
         `   nome = "${usuario}"; `
 
-    return new Promise((resolve, reject) => {
-        database.query(sql, (e, data) => {
-            if (e) {
-                reject('Error')
-            }
-            else {
-                resolve(data[0]['numero_conta'])
-            }
-        })
-    })
+    try {
+        const result = await database.query(sql)
+
+        return result[0][0].numero_conta
+    } catch (error) {
+        throw error
+    }
 }
 
 async function getSaldo(numeroConta) {
@@ -31,16 +28,13 @@ async function getSaldo(numeroConta) {
         `WHERE                               ` +
         `   numero_conta = "${numeroConta}"; `
 
-    return new Promise((resolve, reject) => {
-        database.query(sql, (e, data) => {
-            if (e) {
-                reject('Error')
-            }
-            else {
-                resolve(data[0]["saldo"])
-            }
-        })
-    })
+    try {
+        const result = await database.query(sql)
+
+        return result[0][0].saldo
+    } catch (error) {
+        throw error
+    }
 }
 
 async function updateSaldo(numeroConta, valorAtualizado) {
@@ -52,16 +46,11 @@ async function updateSaldo(numeroConta, valorAtualizado) {
         `WHERE                               ` +
         `    numero_conta = "${numeroConta}";`
 
-    return new Promise((resolve, reject) => {
-        database.query(sql, (e, data) => {
-            if (e) {
-                reject('Error')
-            }
-            else {
-                resolve(data)
-            }
-        })
-    })
+    try {
+        await database.execute(sql)
+    } catch (error) {
+        throw error
+    }
 }
 
 async function setMovimentacao(numeroConta, descricao, valor) {
@@ -79,18 +68,12 @@ async function setMovimentacao(numeroConta, descricao, valor) {
         `    ${valor}              ` +
         `);                        `
 
-    return new Promise((resolve, reject) => {
-        database.query(sql, (e, data) => {
-            if (e) {
-                reject('Error')
-            }
-            else {
-                resolve(data)
-            }
-        })
-    })
+    try {
+        await database.execute(sql)
+    } catch (error) {
+        throw error
+    }
 }
-
 
 class BankController {
 
@@ -224,11 +207,10 @@ class BankController {
                         response.json({ "Message": "Transferência realizada com sucesso!" })
                 )
         )
-
     }
 
     async getInfo(request, response) {
-        const { usuario } = request.body
+        const usuario = request.query.nome_usuario
 
         var sql = `SELECT * FROM cliente`
 
@@ -236,16 +218,13 @@ class BankController {
             sql = sql + ` WHERE nome = "${usuario}"`
         }
 
-        var result = new Promise((resolve, reject) => {
-            database.query(sql, (e, data) => {
-                if (e) {
-                    reject(e)
-                    return
-                }
-                result = data
-                resolve(result)
-            })
-        }).then(result => response.json(result))
+        try {
+            const result = await database.query(sql)
+
+            response.status(200).json(result[0])
+        } catch (error) {
+            response.status(400).json({ message: error })
+        }
     }
 }
 
