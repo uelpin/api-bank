@@ -15,7 +15,7 @@ async function getUsuario(usuario) {
 
         return result[0][0].numero_conta
     } catch (error) {
-        throw error
+        return undefined
     }
 }
 
@@ -33,7 +33,7 @@ async function getSaldo(numeroConta) {
 
         return result[0][0].saldo
     } catch (error) {
-        throw error
+        return undefined
     }
 }
 
