@@ -81,20 +81,20 @@ class BankController {
         var valorDeposito, { usuario, valor } = request.body
 
         if (usuario == undefined || valor == undefined) {
-            response.json({ "Message": "Falta de dados" })
+            response.status(400).json({ "Message": "Falta de dados" })
             return
         }
         valorDeposito = parseFloat(valor)
 
         var numeroConta = await getUsuario(usuario)
         if (numeroConta == undefined) {
-            response.json({ "Message": "Conta não encontrada" })
+            response.status(404).json({ "Message": "Conta não encontrada" })
             return
         }
 
         var saldoConta = await getSaldo(numeroConta)
         if (saldoConta == 'Error') {
-            response.json({ "Message": "Não foi possivel verificar o saldo!" })
+            response.status(400).json({ message: "Não foi possivel verificar o saldo!" })
             return
         }
 
@@ -104,7 +104,11 @@ class BankController {
             result =>
                 setMovimentacao(numeroConta, 'Depósito', valor).then(
                     result2 =>
-                        response.json({ "Message": "Depósito realizado com sucesso!" })))
+                        response.status(200).json({ message: "Depósito realizado com sucesso!" })).catch(
+                            error =>
+                                response.status(400).json({ message: "Falha ao fazer o deposito" }))).catch(
+                                    error2 =>
+                                        response.status(400).json({ message: "Falha ao fazer o deposito" }))
     }
 
     async saque(request, response) {
